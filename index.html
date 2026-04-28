@@ -487,37 +487,31 @@
 <div id="wrong-flash"></div>
 
 <!-- ══ START SCREEN ══ -->
-<div class="screen" id="start-screen">
-  <h1>👾 Monster Zapper</h1>
-  <h2>3-Digit × 1-Digit</h2>
-  <p>Choose your level:</p>
-  <div id="level-buttons">
-    <button class="btn level-btn lv1" id="lvl-btn-1">
-      Level 1<br><span>1 regroup · easier math</span>
-    </button>
-    <button class="btn level-btn lv2" id="lvl-btn-2">
-      Level 2<br><span>1 regroup · all multipliers</span>
-    </button>
-    <button class="btn level-btn lv3" id="lvl-btn-3">
-      Level 3<br><span>2 regroups · all multipliers</span>
-    </button>
+<div id="start-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;">
+  <div style="font-size:3rem;color:#7df9ff;text-shadow:0 0 20px #7df9ff;font-weight:bold;">👾 Monster Zapper</div>
+  <div style="font-size:1.8rem;color:#ffdd57;font-weight:bold;">3-Digit × 1-Digit</div>
+  <div style="font-size:1.2rem;color:#ccc;">Choose your level:</div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+    <button id="lvl-btn-1" style="padding:18px 28px;font-size:1.3rem;font-family:monospace;font-weight:bold;background:#51cf66;color:#000;border:none;border-radius:8px;cursor:pointer;min-width:150px;touch-action:manipulation;">Level 1<br><small style="font-size:0.7rem;font-weight:normal;">1 regroup · easier math</small></button>
+    <button id="lvl-btn-2" style="padding:18px 28px;font-size:1.3rem;font-family:monospace;font-weight:bold;background:#ffdd57;color:#000;border:none;border-radius:8px;cursor:pointer;min-width:150px;touch-action:manipulation;">Level 2<br><small style="font-size:0.7rem;font-weight:normal;">1 regroup · all multipliers</small></button>
+    <button id="lvl-btn-3" style="padding:18px 28px;font-size:1.3rem;font-family:monospace;font-weight:bold;background:#ff6b6b;color:#fff;border:none;border-radius:8px;cursor:pointer;min-width:150px;touch-action:manipulation;">Level 3<br><small style="font-size:0.7rem;font-weight:normal;">2 regroups · all multipliers</small></button>
   </div>
 </div>
 
 <!-- ══ GAME OVER SCREEN ══ -->
-<div class="screen" id="gameover-screen" style="display:none">
-  <h1>💥 Game Over</h1>
-  <p>The monsters reached the city!</p>
-  <p>Final Score: <span class="big-score" id="final-score">0</span></p>
-  <button class="btn" id="restart-btn">Play Again</button>
+<div id="gameover-screen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000d1a;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;">
+  <div style="font-size:3rem;color:#7df9ff;font-weight:bold;">💥 Game Over</div>
+  <div style="font-size:1.2rem;color:#ccc;">The monsters reached the city!</div>
+  <div style="font-size:1.2rem;color:#ccc;">Final Score: <span id="final-score" style="font-size:2rem;color:#7df9ff;font-weight:bold;">0</span></div>
+  <button id="restart-btn" style="padding:14px 40px;font-size:1.4rem;font-family:monospace;font-weight:bold;background:#7df9ff;color:#000;border:none;border-radius:8px;cursor:pointer;touch-action:manipulation;">Play Again</button>
 </div>
 
 <!-- ══ WIN SCREEN ══ -->
-<div class="screen" id="win-screen" style="display:none">
-  <h1>🏆 You Win!</h1>
-  <p>You zapped all the monsters and saved the city!</p>
-  <p>Final Score: <span class="big-score" id="win-score">0</span></p>
-  <button class="btn" id="win-restart-btn">Play Again</button>
+<div id="win-screen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000d1a;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;">
+  <div style="font-size:3rem;color:#7df9ff;font-weight:bold;">🏆 You Win!</div>
+  <div style="font-size:1.2rem;color:#ccc;">You zapped all the monsters and saved the city!</div>
+  <div style="font-size:1.2rem;color:#ccc;">Final Score: <span id="win-score" style="font-size:2rem;color:#7df9ff;font-weight:bold;">0</span></div>
+  <button id="win-restart-btn" style="padding:14px 40px;font-size:1.4rem;font-family:monospace;font-weight:bold;background:#7df9ff;color:#000;border:none;border-radius:8px;cursor:pointer;touch-action:manipulation;">Play Again</button>
 </div>
 
 <!-- ══ GAME ══ -->
@@ -669,6 +663,7 @@ bindBtn('fire-btn', fireAtTarget);
 function showScreen(id) {
   [startScreen, gameoverScreen, winScreen].forEach(s => s.style.display = 'none');
   if (id) document.getElementById(id).style.display = 'flex';
+  if (id) document.getElementById(id).style.flexDirection = 'column';
 }
 
 function showSplash() {
