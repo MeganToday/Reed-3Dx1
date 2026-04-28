@@ -48,9 +48,10 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      background: rgba(0,5,16,0.88);
+      z-index: 9999;
+      background: rgba(0,5,16,0.97);
       gap: 20px;
+      pointer-events: auto;
     }
     .screen h1 { font-size: 3rem; color: #7df9ff; text-shadow: 0 0 20px #7df9ff; }
     .screen h2 { font-size: 2rem; color: #ffdd57; }
@@ -107,11 +108,9 @@
     #game {
       position: fixed;
       inset: 0;
-      display: none;
       flex-direction: column;
       z-index: 1;
     }
-    #game.active { display: flex; }
 
     /* HUD */
     #hud {
