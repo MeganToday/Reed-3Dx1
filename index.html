@@ -490,13 +490,13 @@
   <h2>3-Digit × 1-Digit</h2>
   <p>Choose your level:</p>
   <div id="level-buttons">
-    <button class="btn level-btn lv1" onclick="startGame(1)">
+    <button class="btn level-btn lv1" id="lvl-btn-1">
       Level 1<br><span>1 regroup · easier math</span>
     </button>
-    <button class="btn level-btn lv2" onclick="startGame(2)">
+    <button class="btn level-btn lv2" id="lvl-btn-2">
       Level 2<br><span>1 regroup · all multipliers</span>
     </button>
-    <button class="btn level-btn lv3" onclick="startGame(3)">
+    <button class="btn level-btn lv3" id="lvl-btn-3">
       Level 3<br><span>2 regroups · all multipliers</span>
     </button>
   </div>
@@ -507,7 +507,7 @@
   <h1>💥 Game Over</h1>
   <p>The monsters reached the city!</p>
   <p>Final Score: <span class="big-score" id="final-score">0</span></p>
-  <button class="btn" id="restart-btn" onclick="showSplash()">Play Again</button>
+  <button class="btn" id="restart-btn">Play Again</button>
 </div>
 
 <!-- ══ WIN SCREEN ══ -->
@@ -515,7 +515,7 @@
   <h1>🏆 You Win!</h1>
   <p>You zapped all the monsters and saved the city!</p>
   <p>Final Score: <span class="big-score" id="win-score">0</span></p>
-  <button class="btn" id="win-restart-btn" onclick="showSplash()">Play Again</button>
+  <button class="btn" id="win-restart-btn">Play Again</button>
 </div>
 
 <!-- ══ GAME ══ -->
@@ -541,7 +541,7 @@
     </div>
     <div id="work-instructions">
       <div id="hint-line" style="font-size:0.82rem; color:#7df9ff; min-height:2.4em; line-height:1.4;"></div>
-      <button id="fire-btn" onclick="fireAtTarget()">🚀 FIRE!</button>
+      <button id="fire-btn">🚀 FIRE!</button>
       <div id="aim-hint">◀ ▶ arrows to aim</div>
     </div>
   </div>
@@ -651,6 +651,13 @@ const gameEl         = document.getElementById('game');
 // ─────────────────────────────────────────────
 //  SCREENS
 // ─────────────────────────────────────────────
+document.getElementById('lvl-btn-1').addEventListener('click', () => startGame(1));
+document.getElementById('lvl-btn-2').addEventListener('click', () => startGame(2));
+document.getElementById('lvl-btn-3').addEventListener('click', () => startGame(3));
+document.getElementById('restart-btn').addEventListener('click', showSplash);
+document.getElementById('win-restart-btn').addEventListener('click', showSplash);
+document.getElementById('fire-btn').addEventListener('click', fireAtTarget);
+
 function showScreen(id) {
   [startScreen, gameoverScreen, winScreen].forEach(s => s.style.display = 'none');
   if (id) document.getElementById(id).style.display = 'flex';
