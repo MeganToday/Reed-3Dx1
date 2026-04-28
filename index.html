@@ -1157,10 +1157,12 @@ function fireAtTarget() {
 const CANNON_STEP = 18; // px per arrow key press
 
 function aimCannon(dir) {
-  const cannonEl = document.getElementById('cannon');
-  const fieldW   = field.offsetWidth;
-  const curLeft  = parseFloat(cannonEl.style.left) || fieldW / 2;
-  const newLeft  = Math.max(30, Math.min(fieldW - 30, curLeft + dir * CANNON_STEP));
+  const cannonEl  = document.getElementById('cannon');
+  const fieldW    = field.offsetWidth;
+  const fieldRect = field.getBoundingClientRect();
+  const cannonRect = cannonEl.getBoundingClientRect();
+  const curLeft   = cannonRect.left + cannonRect.width / 2 - fieldRect.left;
+  const newLeft   = Math.max(30, Math.min(fieldW - 30, curLeft + dir * CANNON_STEP));
   cannonEl.style.left      = newLeft + 'px';
   cannonEl.style.transform = 'translateX(-50%)';
 
@@ -1239,6 +1241,10 @@ function spawnParticles(m) {
 //  WRONG ANSWER
 // ─────────────────────────────────────────────
 function flashWrong(m) {
+  // Jump the monster 5% of the field height closer to the ground
+  m.y += field.offsetHeight * 0.05;
+  m.el.style.top = m.y + 'px';
+
   m.el.classList.remove('wrong');
   void m.el.offsetWidth;
   m.el.classList.add('wrong');
