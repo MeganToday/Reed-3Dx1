@@ -689,7 +689,7 @@ function startWave() {
   showWaveBanner(`Wave ${state.wave}`);
 
   const count = WAVE_SIZES[state.wave - 1] || 6;
-  const levelBase = state.level === 1 ? BASE_SPEED * 1.6 : BASE_SPEED;
+  const levelBase = state.level === 1 ? BASE_SPEED * 1.75 : BASE_SPEED;
   const speed = levelBase + (state.wave - 1) * SPEED_INC;
 
   setTimeout(() => {
