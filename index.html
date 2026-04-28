@@ -3,9 +3,1314 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reed 3Dx1</title>
+  <title>Reed 3Dx1 — Monster Zapper</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(ellipse at top, #0d1b2a 0%, #000510 100%);
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    /* ── Stars ── */
+    #stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: #fff;
+      animation: twinkle var(--d) ease-in-out infinite alternate;
+    }
+    @keyframes twinkle {
+      from { opacity: 0.2; }
+      to   { opacity: 1; }
+    }
+
+    /* ── Screens ── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      background: rgba(0,5,16,0.88);
+      gap: 20px;
+    }
+    .screen h1 { font-size: 3rem; color: #7df9ff; text-shadow: 0 0 20px #7df9ff; }
+    .screen h2 { font-size: 2rem; color: #ffdd57; }
+    .screen p  { font-size: 1.2rem; color: #ccc; text-align: center; max-width: 480px; line-height: 1.6; }
+    .screen .big-score { font-size: 2.5rem; color: #7df9ff; }
+    .btn {
+      margin-top: 10px;
+      padding: 14px 40px;
+      font-size: 1.4rem;
+      font-family: inherit;
+      background: #7df9ff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 1px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:hover { background: #fff; transform: scale(1.05); }
+
+    #level-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .level-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 28px;
+      font-size: 1.3rem;
+      min-width: 150px;
+      line-height: 1.2;
+    }
+    .level-btn span {
+      font-size: 0.72rem;
+      font-weight: normal;
+      margin-top: 5px;
+      opacity: 0.85;
+      letter-spacing: 0;
+    }
+    .level-btn.lv1 { background: #51cf66; }
+    .level-btn.lv1:hover { background: #69db7c; }
+    .level-btn.lv2 { background: #ffdd57; color: #000; }
+    .level-btn.lv2:hover { background: #ffe066; }
+    .level-btn.lv3 { background: #ff6b6b; }
+    .level-btn.lv3:hover { background: #ff8787; }
+
+    /* ── Game area ── */
+    #game {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      z-index: 1;
+    }
+    #game.active { display: flex; }
+
+    /* HUD */
+    #hud {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: rgba(0,0,0,0.5);
+      border-bottom: 1px solid rgba(125,249,255,0.2);
+      font-size: 1.1rem;
+    }
+    #hud .lives { color: #ff6b6b; font-size: 1.3rem; letter-spacing: 4px; }
+    #hud .score-val { color: #7df9ff; font-weight: bold; }
+    #hud .wave-val  { color: #ffdd57; font-weight: bold; }
+
+    /* Monster field */
+    #field {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Ground line */
+    #ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(to right, transparent, #ff4444, transparent);
+      box-shadow: 0 0 12px #ff4444;
+    }
+
+    /* Cannon */
+    #cannon {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      filter: drop-shadow(0 0 8px #7df9ff);
+      z-index: 5;
+      transition: left 0.2s ease;
+    }
+    #cannon::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -22px;
+      width: 44px;
+      height: 22px;
+      background: #2a4a6a;
+      border-radius: 6px 6px 0 0;
+      border: 2px solid #7df9ff;
+    }
+    #cannon::after {
+      content: '';
+      position: absolute;
+      bottom: 20px;
+      left: -5px;
+      width: 10px;
+      height: 28px;
+      background: #7df9ff;
+      border-radius: 4px 4px 0 0;
+    }
+
+    /* Laser */
+    #laser {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      background: linear-gradient(to top, #7df9ff, rgba(125,249,255,0));
+      border-radius: 2px;
+      height: 0;
+      opacity: 0;
+      z-index: 6;
+      transition: height 0.12s ease-out, opacity 0.12s;
+      box-shadow: 0 0 8px #7df9ff, 0 0 20px #7df9ff;
+    }
+    #laser.fire {
+      opacity: 1;
+    }
+
+    /* Monsters */
+    .monster {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: top 0.05s linear;
+      cursor: default;
+      z-index: 4;
+    }
+    .monster .emoji {
+      font-size: 2.8rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 6px rgba(255,100,100,0.6));
+      transition: filter 0.15s;
+    }
+    .monster .problem-label {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+    .monster.targeted .emoji {
+      filter: drop-shadow(0 0 12px #ffdd57) drop-shadow(0 0 4px #fff);
+      animation: pulse 0.8s ease-in-out infinite alternate;
+    }
+    .monster.targeted .problem-label {
+      border-color: #ffdd57;
+      color: #ffdd57;
+    }
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to   { transform: scale(1.08); }
+    }
+    .monster.hit {
+      animation: zap 0.35s forwards;
+    }
+    @keyframes zap {
+      0%   { opacity: 1; transform: scale(1); }
+      50%  { opacity: 0.7; transform: scale(1.4) rotate(15deg); filter: brightness(3); }
+      100% { opacity: 0; transform: scale(0); }
+    }
+    .monster.wrong .emoji {
+      animation: shake 0.4s ease;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-6px); }
+      80%      { transform: translateX(6px); }
+    }
+
+    /* ── Work panel ── */
+    #work-panel {
+      position: relative;
+      z-index: 10;
+      background: rgba(0,0,0,0.75);
+      border-top: 2px solid rgba(125,249,255,0.3);
+      padding: 12px 16px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      min-height: 140px;
+    }
+
+    /* Vertical multiplication display */
+    #mult-display {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0;
+    }
+
+    /* One row in the display (regroup row, number row, etc.) */
+    .mult-row {
+      display: flex;
+      align-items: flex-end;
+    }
+
+    /* Each column cell — holds regroup span above and digit below */
+    .digit-cell {
+      width: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Small regroup number written above the next column's digit */
+    .regroup-slot {
+      height: 22px;
+      min-width: 22px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #ffdd57;
+      text-align: center;
+      line-height: 22px;
+      border-radius: 4px;
+      border: 2px solid transparent;
+      visibility: hidden;
+      transition: border-color 0.15s;
+    }
+    .regroup-slot.waiting {
+      visibility: visible;
+      border-color: #ffdd57;
+      background: rgba(255,221,87,0.12);
+      animation: pop-in 0.15s ease;
+    }
+    .regroup-slot.filled {
+      visibility: visible;
+      border-color: transparent;
+      background: none;
+      color: #ffdd57;
+    }
+    .regroup-slot.wrong-regroup {
+      border-color: #ff6b6b;
+      background: rgba(255,107,107,0.15);
+      animation: shake 0.35s ease;
+    }
+    @keyframes pop-in {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    /* Top-number digits — plain, no crossing out */
+    .top-digit {
+      width: 48px;
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      color: #fff;
+      line-height: 1.1;
+    }
+    /* Highlight the column currently being multiplied */
+    .top-digit.active-col { color: #ffdd57; }
+
+    /* × symbol cell */
+    .mult-op-cell {
+      width: 48px;
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      color: #aaa;
+      line-height: 1.1;
+    }
+
+    /* Divider line */
+    .mult-line {
+      height: 3px;
+      background: rgba(125,249,255,0.5);
+      border-radius: 2px;
+      margin: 3px 0 2px;
+    }
+
+    /* Answer digit slots */
+    .answer-digit {
+      width: 48px;
+      height: 42px;
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      color: #7df9ff;
+      line-height: 42px;
+      border-bottom: 3px solid rgba(125,249,255,0.3);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .answer-digit.active-col {
+      border-bottom-color: #ffdd57;
+      background: rgba(255,221,87,0.08);
+      border-radius: 4px 4px 0 0;
+    }
+    .answer-digit.filled {
+      border-bottom-color: #51cf66;
+    }
+    .answer-digit.wrong-regroup {
+      border-bottom-color: #ff6b6b;
+      animation: shake 0.35s ease;
+    }
+
+    /* Instructions sidebar */
+    #work-instructions {
+      max-width: 190px;
+      font-size: 0.85rem;
+      color: #aaa;
+      line-height: 1.7;
+      border-left: 2px solid rgba(125,249,255,0.2);
+      padding-left: 16px;
+    }
+    #work-instructions .step {
+      margin-bottom: 6px;
+      transition: color 0.2s;
+    }
+    #work-instructions .step.active-step { color: #ffdd57; font-weight: bold; }
+    #work-instructions .step.done-step   { color: #51cf66; }
+
+    /* Fire button */
+    #fire-btn {
+      display: none;
+      margin-top: 8px;
+      padding: 12px 28px;
+      font-size: 1.3rem;
+      font-family: inherit;
+      font-weight: bold;
+      background: #ff4444;
+      color: #fff;
+      border: 3px solid #ff8888;
+      border-radius: 8px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      animation: fire-pulse 0.6s ease-in-out infinite alternate;
+      box-shadow: 0 0 18px #ff4444;
+    }
+    #fire-btn.ready { display: block; }
+    @keyframes fire-pulse {
+      from { transform: scale(1);    box-shadow: 0 0 12px #ff4444; }
+      to   { transform: scale(1.06); box-shadow: 0 0 28px #ff6666; }
+    }
+    /* Cannon aiming arrow hint */
+    #aim-hint {
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-top: 4px;
+      display: none;
+    }
+    #aim-hint.visible { display: block; }
+
+    /* Wave announcement */
+    #wave-banner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      font-size: 3rem;
+      color: #ffdd57;
+      text-shadow: 0 0 30px #ffdd57;
+      font-weight: bold;
+      z-index: 50;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    #wave-banner.show { opacity: 1; }
+
+    /* Wrong flash overlay */
+    #wrong-flash {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,50,50,0);
+      pointer-events: none;
+      z-index: 99;
+      transition: background 0.15s;
+    }
+    #wrong-flash.flash { background: rgba(255,50,50,0.15); }
+
+    /* Explode particles */
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 7;
+      animation: particle-fly var(--dur) ease-out forwards;
+    }
+    @keyframes particle-fly {
+      from { transform: translate(0,0) scale(1); opacity: 1; }
+      to   { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    }
+  </style>
 </head>
 <body>
 
+<!-- Stars background -->
+<div id="stars"></div>
+
+<!-- Wave banner -->
+<div id="wave-banner"></div>
+
+<!-- Wrong flash -->
+<div id="wrong-flash"></div>
+
+<!-- ══ START SCREEN ══ -->
+<div class="screen" id="start-screen">
+  <h1>👾 Monster Zapper</h1>
+  <h2>3-Digit × 1-Digit</h2>
+  <p>Choose your level:</p>
+  <div id="level-buttons">
+    <button class="btn level-btn lv1" onclick="startGame(1)">
+      Level 1<br><span>1 regroup · easier math</span>
+    </button>
+    <button class="btn level-btn lv2" onclick="startGame(2)">
+      Level 2<br><span>1 regroup · all multipliers</span>
+    </button>
+    <button class="btn level-btn lv3" onclick="startGame(3)">
+      Level 3<br><span>2 regroups · all multipliers</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ GAME OVER SCREEN ══ -->
+<div class="screen" id="gameover-screen" style="display:none">
+  <h1>💥 Game Over</h1>
+  <p>The monsters reached the city!</p>
+  <p>Final Score: <span class="big-score" id="final-score">0</span></p>
+  <button class="btn" id="restart-btn" onclick="showSplash()">Play Again</button>
+</div>
+
+<!-- ══ WIN SCREEN ══ -->
+<div class="screen" id="win-screen" style="display:none">
+  <h1>🏆 You Win!</h1>
+  <p>You zapped all the monsters and saved the city!</p>
+  <p>Final Score: <span class="big-score" id="win-score">0</span></p>
+  <button class="btn" id="win-restart-btn" onclick="showSplash()">Play Again</button>
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="game">
+  <!-- HUD -->
+  <div id="hud">
+    <div>❤️ <span class="lives" id="lives-display">♥♥♥</span></div>
+    <div>Lv <span class="wave-val" id="level-display">1</span> &nbsp; Wave <span class="wave-val" id="wave-display">1</span> / 5</div>
+    <div>Score <span class="score-val" id="score-display">0</span></div>
+  </div>
+
+  <!-- Monster field -->
+  <div id="field">
+    <div id="ground"></div>
+    <div id="cannon"></div>
+    <div id="laser"></div>
+  </div>
+
+  <!-- Work panel -->
+  <div id="work-panel">
+    <div id="mult-display">
+      <!-- built dynamically by JS -->
+    </div>
+    <div id="work-instructions">
+      <div id="hint-line" style="font-size:0.82rem; color:#7df9ff; min-height:2.4em; line-height:1.4;"></div>
+      <button id="fire-btn" onclick="fireAtTarget()">🚀 FIRE!</button>
+      <div id="aim-hint">◀ ▶ arrows to aim</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  STARS
+// ─────────────────────────────────────────────
+(function buildStars() {
+  const el = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `
+      width:${sz}px; height:${sz}px;
+      top:${Math.random()*100}%;
+      left:${Math.random()*100}%;
+      --d:${(Math.random()*3+1).toFixed(1)}s;
+    `;
+    el.appendChild(s);
+  }
+})();
+
+// ─────────────────────────────────────────────
+//  PROBLEM GENERATOR
+// ─────────────────────────────────────────────
+function countCarries(a, b) {
+  let carry = 0, carries = 0;
+  const cols = [a % 10, Math.floor(a / 10) % 10, Math.floor(a / 100)];
+  for (const d of cols) {
+    const prod = d * b + carry;
+    carry = Math.floor(prod / 10);
+    if (carry > 0) carries++;
+  }
+  return carries;
+}
+
+function isValidProblem(a, b, level) {
+  const carries = countCarries(a, b);
+  if (level === 1) return carries === 1 && b <= 5;
+  if (level === 2) return carries === 1;
+  if (level === 3) return carries >= 2;
+  return carries >= 1;
+}
+
+function generateProblem() {
+  const level = state.level || 1;
+  let a, b, tries = 0;
+  do {
+    a = Math.floor(Math.random() * 900) + 100;
+    b = Math.floor(Math.random() * 8) + 2;
+    tries++;
+  } while (!isValidProblem(a, b, level) && tries < 300);
+  return { a, b, answer: a * b };
+}
+
+// ─────────────────────────────────────────────
+//  GAME STATE
+// ─────────────────────────────────────────────
+const WAVES         = 5;
+const WAVE_SIZES    = [4, 5, 5, 6, 6];
+const BASE_SPEED    = 0.18;  // px per tick
+const SPEED_INC     = 0.04;
+const TICK_MS       = 50;
+const GROUND_THRESH = 0.92; // fraction of field height
+
+let state = {};
+
+function resetState() {
+  state = {
+    level: 1,
+    lives: 3,
+    score: 0,
+    wave: 1,
+    monsters: [],
+    nextId: 0,
+    running: false,
+    paused: false,
+    fireReady: false,
+    fireTarget: null,
+    tickTimer: null,
+    currentProblem: null,
+    usedProblems: new Set(),
+    waveClearPending: false,
+  };
+}
+
+// ─────────────────────────────────────────────
+//  DOM REFS
+// ─────────────────────────────────────────────
+const field         = document.getElementById('field');
+const laser         = document.getElementById('laser');
+const livesDisplay  = document.getElementById('lives-display');
+const waveDisplay   = document.getElementById('wave-display');
+const scoreDisplay  = document.getElementById('score-display');
+const multDisplay   = document.getElementById('mult-display');
+const waveBanner    = document.getElementById('wave-banner');
+const wrongFlash    = document.getElementById('wrong-flash');
+
+const startScreen    = document.getElementById('start-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+const winScreen      = document.getElementById('win-screen');
+const gameEl         = document.getElementById('game');
+
+// ─────────────────────────────────────────────
+//  SCREENS
+// ─────────────────────────────────────────────
+function showScreen(id) {
+  [startScreen, gameoverScreen, winScreen].forEach(s => s.style.display = 'none');
+  if (id) document.getElementById(id).style.display = 'flex';
+}
+
+function showSplash() {
+  gameEl.classList.remove('active');
+  showScreen('start-screen');
+}
+
+// ─────────────────────────────────────────────
+//  GAME START / WAVE
+// ─────────────────────────────────────────────
+function startGame(level) {
+  showScreen(null);
+  gameEl.classList.add('active');
+  resetState();
+  state.level = level || 1;
+  updateHUD();
+  startWave();
+}
+
+function startWave() {
+  state.waveClearPending = false;
+  state.paused    = false;
+  state.fireReady = false;
+  state.fireTarget = null;
+  state.currentProblem = null;
+  document.getElementById('fire-btn').classList.remove('ready');
+  document.getElementById('aim-hint').classList.remove('visible');
+  field.querySelectorAll('.monster').forEach(e => e.remove());
+  state.monsters = [];
+  state.usedProblems.clear();
+
+  waveDisplay.textContent = state.wave;
+  showWaveBanner(`Wave ${state.wave}`);
+
+  const count = WAVE_SIZES[state.wave - 1] || 6;
+  const levelBase = state.level === 1 ? BASE_SPEED * 1.6 : BASE_SPEED;
+  const speed = levelBase + (state.wave - 1) * SPEED_INC;
+
+  setTimeout(() => {
+    spawnMonsters(count, speed);
+    state.running = true;
+    clearInterval(state.tickTimer);
+    state.tickTimer = setInterval(gameTick, TICK_MS);
+    buildWorkDisplay(null);
+    retarget();
+  }, 1800);
+}
+
+function showWaveBanner(text) {
+  waveBanner.textContent = text;
+  waveBanner.classList.add('show');
+  setTimeout(() => waveBanner.classList.remove('show'), 1600);
+}
+
+// ─────────────────────────────────────────────
+//  MONSTER SPAWNING
+// ─────────────────────────────────────────────
+const EMOJIS = ['👾','🛸','👽','🤖','💀','🧟','🐙','🦑'];
+
+function spawnMonsters(count, speed) {
+  const fieldW = field.offsetWidth;
+  const margin = 70;
+  const usedX  = [];
+
+  for (let i = 0; i < count; i++) {
+    const prob = generateUniqueProblem();
+    let x;
+    let tries = 0;
+    do {
+      x = margin + Math.random() * (fieldW - margin * 2);
+      tries++;
+    } while (usedX.some(ux => Math.abs(ux - x) < 90) && tries < 30);
+    usedX.push(x);
+
+    const y = -(80 + i * 110);
+    const emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+    const el = document.createElement('div');
+    el.className = 'monster';
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+    el.innerHTML = `
+      <div class="emoji">${emoji}</div>
+      <div class="problem-label">${prob.a} × ${prob.b}</div>
+    `;
+    field.appendChild(el);
+
+    state.monsters.push({ id: state.nextId++, problem: prob, el, y, speed, active: true });
+  }
+}
+
+function generateUniqueProblem() {
+  let prob;
+  let tries = 0;
+  do {
+    prob = generateProblem();
+    tries++;
+  } while (state.usedProblems.has(`${prob.a}x${prob.b}`) && tries < 50);
+  state.usedProblems.add(`${prob.a}x${prob.b}`);
+  return prob;
+}
+
+// ─────────────────────────────────────────────
+//  GAME TICK
+// ─────────────────────────────────────────────
+function gameTick() {
+  if (!state.running || state.paused) return;
+
+  const fieldH   = field.offsetHeight;
+  const threshold = fieldH * GROUND_THRESH;
+  let reached = false;
+
+  state.monsters.forEach(m => {
+    if (!m.active) return;
+    m.y += m.speed;
+    m.el.style.top = m.y + 'px';
+
+    if (m.y >= threshold) {
+      reached = true;
+      loseLife(m);
+    }
+  });
+
+  // Check wave clear
+  if (state.monsters.every(m => !m.active) && !state.waveClearPending) {
+    state.waveClearPending = true;
+    waveComplete();
+  }
+}
+
+// ─────────────────────────────────────────────
+//  TARGETING
+// ─────────────────────────────────────────────
+function retarget() {
+  const alive = state.monsters.filter(m => m.active);
+  if (!alive.length) return;
+
+  // Target the lowest monster
+  const target = alive.reduce((a, b) => a.y > b.y ? a : b);
+
+  state.monsters.forEach(m => m.el.classList.remove('targeted'));
+  target.el.classList.add('targeted');
+
+  if (!state.currentProblem || state.currentProblem.monsterId !== target.id) {
+    buildWorkDisplay(target);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  WORK DISPLAY — standard algorithm, column by column
+// ─────────────────────────────────────────────
+/*
+  solveState phases per column:
+    'answer'   → player types the ones digit of the column product
+    'regroup'  → product ≥ 10: player types the regroup digit into the small slot above the next column
+*/
+
+function buildWorkDisplay(targetMonster) {
+  multDisplay.innerHTML = '';
+
+  if (!targetMonster) {
+    multDisplay.innerHTML = '<div style="color:#555;font-size:0.95rem;padding:8px;">Waiting for target…</div>';
+    updateStepIndicators(-1, '');
+    return;
+  }
+
+  const { a, b } = targetMonster.problem;
+  const digits  = String(a).split('').map(Number); // [h, t, o]
+  const numCols = digits.length; // 3
+
+  const solveState = {
+    monsterId: targetMonster.id,
+    monster:   targetMonster,
+    a, b, digits, numCols,
+    colIndex: numCols - 1, // start at ones (index 2)
+    phase: 'answer',
+    carryIn:    new Array(numCols).fill(0), // regroup value coming INTO each column
+    regroupEls: [],  // small regroup <span> elements, indexed 0..numCols-1 (hundreds..ones)
+    topDigitEls:[],  // top-number digit <span> elements
+    answerEls:  [],  // answer slot <div> elements, index 0=leading, 1=H, 2=T, 3=O
+    _regroup: 0,
+    _regroupToCol: 0,
+  };
+
+  const CELL_W = 48;
+
+  // ── Row 1: regroup slots ──
+  // Slots sit above each of the 3 digit columns (not above the leading answer slot).
+  // Index matches digit index: regroupEls[0]=above hundreds, [1]=above tens, [2]=above ones.
+  // (Regroup always moves LEFT, so we never need a slot above the leading column.)
+  const regroupRow = document.createElement('div');
+  regroupRow.className = 'mult-row';
+
+  // leading spacer (aligns with the leading answer slot)
+  const rLeadSpacer = document.createElement('div');
+  rLeadSpacer.style.width = CELL_W + 'px';
+  regroupRow.appendChild(rLeadSpacer);
+
+  digits.forEach((_, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'digit-cell';
+    const span = document.createElement('span');
+    span.className = 'regroup-slot';
+    span.textContent = '';
+    cell.appendChild(span);
+    regroupRow.appendChild(cell);
+    solveState.regroupEls[i] = span;
+  });
+  multDisplay.appendChild(regroupRow);
+
+  // ── Row 2: top number (3 digits) ──
+  const topRow = document.createElement('div');
+  topRow.className = 'mult-row';
+
+  const tLeadSpacer = document.createElement('div');
+  tLeadSpacer.style.width = CELL_W + 'px';
+  topRow.appendChild(tLeadSpacer);
+
+  digits.forEach((d, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'digit-cell';
+    const span = document.createElement('span');
+    span.className = 'top-digit';
+    span.textContent = d;
+    cell.appendChild(span);
+    topRow.appendChild(cell);
+    solveState.topDigitEls[i] = span;
+  });
+  multDisplay.appendChild(topRow);
+
+  // ── Row 3: × and multiplier ──
+  const multRow = document.createElement('div');
+  multRow.className = 'mult-row';
+  multRow.style.alignItems = 'center';
+
+  // × sign in the leading-spacer position
+  const xCell = document.createElement('div');
+  xCell.className = 'mult-op-cell';
+  xCell.textContent = '×';
+  multRow.appendChild(xCell);
+
+  // blank spacers for hundreds and tens columns
+  for (let i = 0; i < numCols - 1; i++) {
+    const sp = document.createElement('div');
+    sp.style.width = CELL_W + 'px';
+    multRow.appendChild(sp);
+  }
+
+  // multiplier under the ones column
+  const bCell = document.createElement('div');
+  bCell.style.cssText = `width:${CELL_W}px; text-align:center; font-size:2rem; font-weight:bold; color:#fff;`;
+  bCell.textContent = b;
+  multRow.appendChild(bCell);
+
+  multDisplay.appendChild(multRow);
+
+  // ── Divider ──
+  const lineRow = document.createElement('div');
+  lineRow.className = 'mult-row';
+  const lineDiv = document.createElement('div');
+  lineDiv.className = 'mult-line';
+  lineDiv.style.width = ((numCols + 1) * CELL_W) + 'px';
+  lineRow.appendChild(lineDiv);
+  multDisplay.appendChild(lineRow);
+
+  // ── Row 4: answer slots ──
+  // [0]=leading (auto-filled if hundreds regroups), [1]=H, [2]=T, [3]=O
+  const ansRow = document.createElement('div');
+  ansRow.className = 'mult-row';
+
+  for (let i = 0; i < numCols + 1; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'digit-cell';
+    const slot = document.createElement('div');
+    slot.className = 'answer-digit';
+    slot.textContent = '';
+    cell.appendChild(slot);
+    ansRow.appendChild(cell);
+    solveState.answerEls[i] = slot;
+  }
+  multDisplay.appendChild(ansRow);
+
+  state.currentProblem = solveState;
+  highlightActiveColumn();
+  setHint(solveState);
+}
+
+function highlightActiveColumn() {
+  const s = state.currentProblem;
+  if (!s) return;
+
+  // Clear all highlights
+  s.topDigitEls.forEach(el => el.classList.remove('active-col'));
+  s.answerEls.forEach(el => el.classList.remove('active-col'));
+
+  if (s.phase === 'answer') {
+    // Highlight current top digit and answer slot
+    // colIndex 2=ones→topDigitEls[2], answerEls[3]
+    // colIndex 1=tens→topDigitEls[1], answerEls[2]
+    // colIndex 0=hund→topDigitEls[0], answerEls[1]
+    s.topDigitEls[s.colIndex].classList.add('active-col');
+    s.answerEls[s.colIndex + 1].classList.add('active-col');
+  } else {
+    // regroup phase: highlight the regroup slot's column (already handled by .waiting class)
+    // keep current answer slot highlighted too
+    s.answerEls[s.colIndex + 1].classList.add('active-col');
+  }
+}
+
+function updateStepIndicators(stepIdx, hint) {
+  document.getElementById('hint-line').textContent = '';
+}
+
+function setHint(s) {
+  const colNames = ['hundreds', 'tens', 'ones'];
+  const stepIdx  = s.numCols - 1 - s.colIndex; // 0=ones, 1=tens, 2=hundreds
+
+  if (s.phase === 'leading') {
+    updateStepIndicators(3, `Write the first digit of the answer → type ${s._leadingDigit}`);
+  } else if (s.phase === 'answer') {
+    const col  = s.colIndex;
+    const cin  = s.carryIn[col];
+    const prod = s.digits[col] * s.b + cin;
+    const hint = cin > 0
+      ? `${s.digits[col]} × ${s.b} + ${cin} (regrouped) = ${prod} → type ${prod % 10}`
+      : `${s.digits[col]} × ${s.b} = ${prod} → type ${prod % 10}`;
+    updateStepIndicators(stepIdx, hint);
+  } else {
+    const toCol = s._regroupToCol;
+    updateStepIndicators(stepIdx,
+      `Regroup! Write the small number (${s._regroup}) above the ${colNames[toCol]} column`);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  INPUT HANDLING
+// ─────────────────────────────────────────────
+document.addEventListener('keydown', handleKey);
+
+function handleKey(e) {
+  // Fire-ready state handled first — paused flag must not block it
+  if (state.fireReady) {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      fireAtTarget();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      aimCannon(e.key === 'ArrowLeft' ? -1 : 1);
+    }
+    return;
+  }
+
+  if (!state.running || state.paused) return;
+  if (!/^[0-9]$/.test(e.key)) return;
+  e.preventDefault();
+
+  const s = state.currentProblem;
+  if (!s) return;
+
+  const digit = parseInt(e.key);
+  if (s.phase === 'answer')   handleAnswerDigit(s, digit);
+  else if (s.phase === 'regroup')  handleRegroupDigit(s, digit);
+  else if (s.phase === 'leading')  handleLeadingDigit(s, digit);
+}
+
+function handleAnswerDigit(s, digit) {
+  const col      = s.colIndex;
+  const cin      = s.carryIn[col];
+  const fullProd = s.digits[col] * s.b + cin;
+  const expected = fullProd % 10;
+  const regroup  = Math.floor(fullProd / 10);
+
+  if (digit !== expected) {
+    flashWrong(s.monster);
+    return;
+  }
+
+  // Fill answer slot (col 2→slot 3, col 1→slot 2, col 0→slot 1)
+  const slot = s.answerEls[col + 1];
+  slot.textContent = digit;
+  slot.classList.remove('active-col');
+  slot.classList.add('filled');
+
+  if (regroup > 0 && col > 0) {
+    showRegroup(s, regroup);
+  } else if (col === 0 && regroup > 0) {
+    // Hundreds column produced a regroup — player must type the leading digit
+    s._leadingDigit = regroup;
+    s.phase = 'leading';
+    s.answerEls[0].classList.add('active-col');
+    setHint(s);
+  } else {
+    advanceColumn(s);
+  }
+}
+
+function showRegroup(s, regroupVal) {
+  const toCol = s.colIndex - 1; // regroup goes one column to the left
+  s.carryIn[toCol] = regroupVal;
+  s._regroup      = regroupVal;
+  s._regroupToCol = toCol;
+  s.phase         = 'regroup';
+
+  const regroupSpan = s.regroupEls[toCol];
+  regroupSpan.textContent = '';
+  regroupSpan.className = 'regroup-slot waiting';
+
+  highlightActiveColumn();
+  setHint(s);
+}
+
+function handleRegroupDigit(s, digit) {
+  if (digit !== s._regroup) {
+    const span = s.regroupEls[s._regroupToCol];
+    span.classList.add('wrong-regroup');
+    setTimeout(() => span.classList.remove('wrong-regroup'), 400);
+    flashWrong(s.monster);
+    return;
+  }
+
+  // Correct — fill the small regroup slot
+  const span = s.regroupEls[s._regroupToCol];
+  span.textContent = digit;
+  span.className = 'regroup-slot filled';
+
+  s.phase = 'answer';
+  advanceColumn(s);
+}
+
+function handleLeadingDigit(s, digit) {
+  if (digit !== s._leadingDigit) {
+    s.answerEls[0].classList.add('wrong-regroup');
+    setTimeout(() => s.answerEls[0].classList.remove('wrong-regroup'), 400);
+    flashWrong(s.monster);
+    return;
+  }
+  s.answerEls[0].textContent = digit;
+  s.answerEls[0].classList.remove('active-col');
+  s.answerEls[0].classList.add('filled');
+  mathComplete(s);
+}
+
+function advanceColumn(s) {
+  s.colIndex--;
+  if (s.colIndex < 0) {
+    mathComplete(s);
+    return;
+  }
+  s.phase = 'answer';
+  highlightActiveColumn();
+  setHint(s);
+}
+
+function mathComplete(s) {
+  // All columns done — enter fire-ready state
+  state.paused    = true;
+  state.fireReady = true;
+  state.fireTarget = s.monster;
+
+  // Highlight the target monster
+  state.monsters.forEach(m => m.el.classList.remove('targeted'));
+  s.monster.el.classList.add('targeted');
+
+  // Show fire button — player aims manually with arrow keys
+  document.getElementById('fire-btn').classList.add('ready');
+  document.getElementById('aim-hint').classList.add('visible');
+
+  updateStepIndicators(4, '');
+}
+
+function fireAtTarget() {
+  if (!state.fireReady) return;
+  const m = state.fireTarget;
+  if (!m || !m.active) return;
+
+  // Hide fire controls
+  document.getElementById('fire-btn').classList.remove('ready');
+  document.getElementById('aim-hint').classList.remove('visible');
+
+  state.fireReady  = false;
+  state.paused     = false;
+  state.fireTarget = null;
+  // Reset cannon to center
+  const cannonEl = document.getElementById('cannon');
+  cannonEl.style.left      = '50%';
+  cannonEl.style.transform = 'translateX(-50%)';
+
+  // Score and zap
+  state.score += 100 + state.wave * 10;
+  updateHUD();
+  zapMonster(m);
+  m.active = false;
+  state.currentProblem = null;
+  buildWorkDisplay(null);
+
+  setTimeout(() => {
+    m.el.remove();
+    retarget();
+  }, 400);
+}
+
+const CANNON_STEP = 18; // px per arrow key press
+
+function aimCannon(dir) {
+  const cannonEl = document.getElementById('cannon');
+  const fieldW   = field.offsetWidth;
+  const curLeft  = parseFloat(cannonEl.style.left) || fieldW / 2;
+  const newLeft  = Math.max(30, Math.min(fieldW - 30, curLeft + dir * CANNON_STEP));
+  cannonEl.style.left      = newLeft + 'px';
+  cannonEl.style.transform = 'translateX(-50%)';
+
+  // Highlight whichever alive monster is closest to cannon
+  const fieldRect = field.getBoundingClientRect();
+  const alive = state.monsters.filter(m => m.active);
+  if (!alive.length) return;
+  let closest = alive[0];
+  let minDist = Infinity;
+  alive.forEach(m => {
+    const r    = m.el.getBoundingClientRect();
+    const mx   = r.left + r.width / 2 - fieldRect.left;
+    const dist = Math.abs(mx - newLeft);
+    if (dist < minDist) { minDist = dist; closest = m; }
+  });
+  state.fireTarget = closest;
+  state.monsters.forEach(m => m.el.classList.remove('targeted'));
+  closest.el.classList.add('targeted');
+}
+
+// ─────────────────────────────────────────────
+//  ZAP & LASER
+// ─────────────────────────────────────────────
+function zapMonster(m) {
+  m.el.classList.add('hit');
+  fireLaser(m);
+  spawnParticles(m);
+}
+
+function fireLaser(m) {
+  const cannonEl  = document.getElementById('cannon');
+  const fieldRect = field.getBoundingClientRect();
+  const monsterRect = m.el.getBoundingClientRect();
+  const monsterCenterY = monsterRect.top + monsterRect.height / 2 - fieldRect.top;
+  const cannonRect = cannonEl.getBoundingClientRect();
+  const cannonCenterX = cannonRect.left + cannonRect.width / 2 - fieldRect.left;
+  const fieldH  = field.offsetHeight;
+  const cannonY = fieldH - 36;
+  const beamHeight = cannonY - monsterCenterY;
+
+  laser.style.left      = cannonCenterX + 'px';
+  laser.style.transform = 'translateX(-50%)';
+  laser.style.height    = beamHeight + 'px';
+  laser.classList.add('fire');
+  setTimeout(() => {
+    laser.classList.remove('fire');
+    laser.style.height = '0';
+  }, 220);
+}
+
+function spawnParticles(m) {
+  const rect = m.el.getBoundingClientRect();
+  const fieldRect = field.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2 - fieldRect.left;
+  const cy = rect.top  + rect.height / 2 - fieldRect.top;
+  const colors = ['#7df9ff','#ffdd57','#ff6b6b','#51cf66','#fff'];
+
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (i / 12) * Math.PI * 2;
+    const dist  = 40 + Math.random() * 50;
+    p.style.cssText = `
+      left:${cx}px; top:${cy}px;
+      background:${colors[i % colors.length]};
+      --dx:${Math.cos(angle)*dist}px;
+      --dy:${Math.sin(angle)*dist}px;
+      --dur:${0.3 + Math.random()*0.3}s;
+    `;
+    field.appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  WRONG ANSWER
+// ─────────────────────────────────────────────
+function flashWrong(m) {
+  m.el.classList.remove('wrong');
+  void m.el.offsetWidth;
+  m.el.classList.add('wrong');
+  setTimeout(() => m.el.classList.remove('wrong'), 500);
+
+  wrongFlash.classList.add('flash');
+  setTimeout(() => wrongFlash.classList.remove('flash'), 200);
+}
+
+// ─────────────────────────────────────────────
+//  LIFE LOST
+// ─────────────────────────────────────────────
+function loseLife(m) {
+  m.active = false;
+  m.el.remove();
+  state.lives--;
+  updateHUD();
+
+  // Red flash
+  wrongFlash.classList.add('flash');
+  setTimeout(() => wrongFlash.classList.remove('flash'), 300);
+
+  if (state.lives <= 0) {
+    gameOver();
+    return;
+  }
+
+  if (state.currentProblem && state.currentProblem.monsterId === m.id) {
+    state.currentProblem = null;
+    buildWorkDisplay(null);
+  }
+  retarget();
+}
+
+// ─────────────────────────────────────────────
+//  WAVE COMPLETE / GAME OVER / WIN
+// ─────────────────────────────────────────────
+function waveComplete() {
+  clearInterval(state.tickTimer);
+  state.running = false;
+
+  if (state.wave >= WAVES) {
+    setTimeout(winGame, 800);
+  } else {
+    state.wave++;
+    setTimeout(startWave, 1200);
+  }
+}
+
+function gameOver() {
+  clearInterval(state.tickTimer);
+  state.running = false;
+  gameEl.classList.remove('active');
+  document.getElementById('final-score').textContent = state.score;
+  showScreen('gameover-screen');
+}
+
+function winGame() {
+  gameEl.classList.remove('active');
+  document.getElementById('win-score').textContent = state.score;
+  showScreen('win-screen');
+}
+
+// ─────────────────────────────────────────────
+//  HUD
+// ─────────────────────────────────────────────
+function updateHUD() {
+  livesDisplay.textContent = '♥'.repeat(Math.max(0, state.lives));
+  scoreDisplay.textContent = state.score;
+  waveDisplay.textContent  = state.wave;
+  document.getElementById('level-display').textContent = state.level || 1;
+}
+</script>
 </body>
 </html>
