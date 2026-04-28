@@ -105,11 +105,9 @@
     #game {
       position: fixed;
       inset: 0;
-      display: none;
       flex-direction: column;
       z-index: 1;
     }
-    #game.active { display: flex; }
 
     /* HUD */
     #hud {
@@ -520,7 +518,7 @@
 </div>
 
 <!-- ══ GAME ══ -->
-<div id="game">
+<div id="game" style="display:none">
   <!-- HUD -->
   <div id="hud">
     <div>❤️ <span class="lives" id="lives-display">♥♥♥</span></div>
@@ -665,7 +663,7 @@ function showScreen(id) {
 }
 
 function showSplash() {
-  gameEl.classList.remove('active');
+  gameEl.style.display = 'none';
   showScreen('start-screen');
 }
 
@@ -674,7 +672,7 @@ function showSplash() {
 // ─────────────────────────────────────────────
 function startGame(level) {
   showScreen(null);
-  gameEl.classList.add('active');
+  gameEl.style.display = 'flex';
   resetState();
   state.level = level || 1;
   updateHUD();
@@ -1305,13 +1303,13 @@ function waveComplete() {
 function gameOver() {
   clearInterval(state.tickTimer);
   state.running = false;
-  gameEl.classList.remove('active');
+  gameEl.style.display = 'none';
   document.getElementById('final-score').textContent = state.score;
   showScreen('gameover-screen');
 }
 
 function winGame() {
-  gameEl.classList.remove('active');
+  gameEl.style.display = 'none';
   document.getElementById('win-score').textContent = state.score;
   showScreen('win-screen');
 }
