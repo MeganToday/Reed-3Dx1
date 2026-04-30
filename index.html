@@ -337,7 +337,7 @@
     </div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
       <button id="fire-btn">🚀 FIRE!</button>
-      <div id="aim-hint">◀ ▶ to aim</div>
+      <div id="aim-hint">drag field to aim</div>
     </div>
   </div>
 </div>
@@ -697,6 +697,12 @@ function aimCannon(dir) {
   const cr=cannon.getBoundingClientRect();
   const cx=cr.left+cr.width/2-fr.left;
   const nx=Math.max(30, Math.min(fw-30, cx+dir*CSTEP));
+  setCannonX(nx);
+}
+
+function setCannonX(nx) {
+  const fw=field.offsetWidth, fr=field.getBoundingClientRect();
+  nx = Math.max(30, Math.min(fw-30, nx));
   cannon.style.left=nx+'px'; cannon.style.transform='translateX(-50%)';
   const alive=G.monsters.filter(m=>m.active); if(!alive.length) return;
   let best=alive[0], bestD=Infinity;
@@ -705,6 +711,24 @@ function aimCannon(dir) {
   G.monsters.forEach(m=>m.el.classList.remove('targeted'));
   best.el.classList.add('targeted');
 }
+
+// ── touch-drag aiming on the field ───────────────
+let _touchAiming = false;
+field.addEventListener('touchstart', e => {
+  if (!G.fireReady) return;
+  _touchAiming = true;
+  const fr = field.getBoundingClientRect();
+  setCannonX(e.touches[0].clientX - fr.left);
+}, { passive: true });
+
+field.addEventListener('touchmove', e => {
+  if (!G.fireReady || !_touchAiming) return;
+  e.preventDefault();
+  const fr = field.getBoundingClientRect();
+  setCannonX(e.touches[0].clientX - fr.left);
+}, { passive: false });
+
+field.addEventListener('touchend', () => { _touchAiming = false; });
 
 // ── zap ──────────────────────────────────────────
 function zap(m) {
