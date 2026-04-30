@@ -214,6 +214,31 @@
     #aim-hint { display:none; font-size:.78rem; color:#aaa; margin-top:4px; }
     #aim-hint.on { display:block; }
 
+    /* numeric keypad */
+    #numpad {
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:6px;
+      padding:8px;
+      background:rgba(255,255,255,0.05);
+      border-radius:10px;
+      border:1px solid rgba(125,249,255,0.15);
+    }
+    .npk {
+      width:52px; height:52px;
+      font-size:1.5rem; font-weight:bold; font-family:inherit;
+      background:rgba(255,255,255,0.1);
+      color:#fff; border:2px solid rgba(255,255,255,0.2);
+      border-radius:8px; cursor:pointer;
+      touch-action:manipulation;
+      -webkit-tap-highlight-color:transparent;
+      transition:background 0.1s, transform 0.08s;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .npk:active { background:rgba(125,249,255,0.35); transform:scale(0.92); }
+    .npk.flash-ok  { background:rgba(81,207,102,0.5);  border-color:#51cf66; }
+    .npk.flash-bad { background:rgba(255,100,100,0.5); border-color:#f66; }
+
     /* wave banner */
     #wbanner {
       position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
@@ -285,7 +310,19 @@
   </div>
   <div id="panel">
     <div id="mult"></div>
-    <div style="border-left:2px solid rgba(125,249,255,.2);padding-left:16px">
+    <div id="numpad">
+      <button class="npk" data-n="7">7</button>
+      <button class="npk" data-n="8">8</button>
+      <button class="npk" data-n="9">9</button>
+      <button class="npk" data-n="4">4</button>
+      <button class="npk" data-n="5">5</button>
+      <button class="npk" data-n="6">6</button>
+      <button class="npk" data-n="1">1</button>
+      <button class="npk" data-n="2">2</button>
+      <button class="npk" data-n="3">3</button>
+      <button class="npk" data-n="0" style="grid-column:2">0</button>
+    </div>
+    <div style="border-left:2px solid rgba(125,249,255,.2);padding-left:16px;display:flex;flex-direction:column;align-items:center;gap:8px;">
       <button id="fire-btn">🚀 FIRE!</button>
       <div id="aim-hint">◀ ▶ to aim</div>
     </div>
@@ -546,6 +583,25 @@ function hilite() {
   }
 }
 
+// ── numpad wiring ────────────────────────────────
+document.querySelectorAll('.npk').forEach(btn => {
+  btn.addEventListener('click', () => pressDigit(parseInt(btn.dataset.n), btn));
+});
+
+function pressDigit(d, btnEl) {
+  if (G.fireReady) return;
+  if (!G.running || G.paused) return;
+  const S = G.curProblem; if (!S) return;
+  const accepted =
+    S.phase==='answer'  ? onAnswer(S, d) :
+    S.phase==='regroup' ? onRegroup(S, d) :
+    S.phase==='leading' ? onLeading(S, d) : false;
+  if (btnEl) {
+    btnEl.classList.add(accepted ? 'flash-ok' : 'flash-bad');
+    setTimeout(() => btnEl.classList.remove('flash-ok','flash-bad'), 300);
+  }
+}
+
 // ── key handler ──────────────────────────────────
 document.addEventListener('keydown', e => {
   if (G.fireReady) {
@@ -555,18 +611,14 @@ document.addEventListener('keydown', e => {
   if (!G.running || G.paused) return;
   if (!/^[0-9]$/.test(e.key)) return;
   e.preventDefault();
-  const S = G.curProblem; if(!S) return;
-  const d = parseInt(e.key);
-  if (S.phase==='answer')   onAnswer(S, d);
-  else if (S.phase==='regroup')  onRegroup(S, d);
-  else if (S.phase==='leading')  onLeading(S, d);
+  pressDigit(parseInt(e.key), null);
 });
 
 function onAnswer(S, d) {
   const cin = S.carryIn[S.colIdx];
   const prod = S.digits[S.colIdx] * S.b + cin;
   const exp = prod % 10, rg = Math.floor(prod/10);
-  if (d !== exp) { flashWrong(S.mon); return; }
+  if (d !== exp) { flashWrong(S.mon); return false; }
   const slot = S.ansEls[S.colIdx+1];
   slot.textContent = d; slot.classList.remove('hi'); slot.classList.add('ok');
   if (rg > 0 && S.colIdx > 0) {
@@ -579,19 +631,22 @@ function onAnswer(S, d) {
     if (S.colIdx===0 && rg>0) { S._leading=rg; S.phase='leading'; S.ansEls[0].classList.add('hi'); hilite(); }
     else nextCol(S);
   }
+  return true;
 }
 
 function onRegroup(S, d) {
   const rs = S.regroupEls[S._regroupToCol];
-  if (d !== S._regroup) { rs.classList.add('bad'); setTimeout(()=>rs.classList.remove('bad'),400); flashWrong(S.mon); return; }
+  if (d !== S._regroup) { rs.classList.add('bad'); setTimeout(()=>rs.classList.remove('bad'),400); flashWrong(S.mon); return false; }
   rs.textContent=d; rs.className='rslot filled';
   S.phase='answer'; nextCol(S);
+  return true;
 }
 
 function onLeading(S, d) {
-  if (d !== S._leading) { S.ansEls[0].classList.add('bad'); setTimeout(()=>S.ansEls[0].classList.remove('bad'),400); flashWrong(S.mon); return; }
+  if (d !== S._leading) { S.ansEls[0].classList.add('bad'); setTimeout(()=>S.ansEls[0].classList.remove('bad'),400); flashWrong(S.mon); return false; }
   S.ansEls[0].textContent=d; S.ansEls[0].classList.remove('hi'); S.ansEls[0].classList.add('ok');
   mathDone(S);
+  return true;
 }
 
 function nextCol(S) {
