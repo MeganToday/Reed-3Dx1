@@ -167,11 +167,16 @@
     /* work panel */
     #panel {
       flex-shrink:0;
-      display:flex; align-items:center; justify-content:center; gap:24px;
+      display:flex; align-items:center; justify-content:center;
+      flex-wrap:wrap; gap:16px;
       padding:10px 14px 8px;
       background:rgba(0,0,0,.8);
       border-top:2px solid rgba(125,249,255,.25);
-      min-height:130px;
+    }
+    /* on narrow screens, math row + numpad stack naturally via flex-wrap */
+    #panel-top {
+      display:flex; align-items:center; justify-content:center; gap:16px;
+      flex-wrap:wrap; width:100%;
     }
     #mult { display:flex; flex-direction:column; align-items:flex-end; gap:0; }
     .mrow { display:flex; align-items:flex-end; }
@@ -222,22 +227,30 @@
       padding:8px;
       background:rgba(255,255,255,0.05);
       border-radius:10px;
-      border:1px solid rgba(125,249,255,0.15);
+      border:1px solid rgba(125,249,255,0.2);
+      flex-shrink:0;
     }
     .npk {
-      width:52px; height:52px;
-      font-size:1.5rem; font-weight:bold; font-family:inherit;
-      background:rgba(255,255,255,0.1);
-      color:#fff; border:2px solid rgba(255,255,255,0.2);
+      width:56px; height:56px;
+      font-size:1.6rem; font-weight:bold; font-family:inherit;
+      background:rgba(255,255,255,0.12);
+      color:#fff; border:2px solid rgba(255,255,255,0.25);
       border-radius:8px; cursor:pointer;
       touch-action:manipulation;
       -webkit-tap-highlight-color:transparent;
-      transition:background 0.1s, transform 0.08s;
-      display:flex; align-items:center; justify-content:center;
+      -webkit-user-select:none; user-select:none;
+      transition:background 0.08s, transform 0.06s;
     }
-    .npk:active { background:rgba(125,249,255,0.35); transform:scale(0.92); }
-    .npk.flash-ok  { background:rgba(81,207,102,0.5);  border-color:#51cf66; }
-    .npk.flash-bad { background:rgba(255,100,100,0.5); border-color:#f66; }
+    .npk:active { background:rgba(125,249,255,0.4); transform:scale(0.9); }
+    .npk.flash-ok  { background:rgba(81,207,102,0.6);  border-color:#51cf66; }
+    .npk.flash-bad { background:rgba(255,80,80,0.6); border-color:#f44; }
+
+    /* on small screens, stack math above numpad */
+    @media (max-width: 500px) {
+      #panel { flex-direction:column; padding:8px 8px 6px; gap:10px; }
+      .npk { width:64px; height:64px; font-size:1.8rem; }
+      #numpad { gap:8px; }
+    }
 
     /* wave banner */
     #wbanner {
@@ -322,7 +335,7 @@
       <button class="npk" data-n="3">3</button>
       <button class="npk" data-n="0" style="grid-column:2">0</button>
     </div>
-    <div style="border-left:2px solid rgba(125,249,255,.2);padding-left:16px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
       <button id="fire-btn">🚀 FIRE!</button>
       <div id="aim-hint">◀ ▶ to aim</div>
     </div>
